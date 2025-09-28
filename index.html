@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart City Interactive System</title>
+  
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Background Effects -->
+  <div class="bg-animation" aria-hidden="true">
+    <div class="bg-circle"></div>
+    <div class="bg-circle"></div>
+    <div class="bg-circle"></div>
+  </div>
+
+  <!-- Quick Access Panel -->
+  <nav id="quickAccess" aria-label="Quick Access Panel">
+    <button data-action="search" title="Search (Ctrl+K)">🔍</button>
+    <button data-action="emergency" title="Emergency Info (Alt+E)">🚨</button>
+    <button data-action="settings" title="Settings (Alt+S)">⚙️</button>
+    <button data-action="refresh" title="Refresh All (Alt+R)">🔄</button>
+    <button data-action="fullscreen" title="Fullscreen (Alt+F)">📺</button>
+  </nav>
+  <div id="themeToggle" class="theme-toggle" title="Toggle Theme"><span>🌙</span></div>
+  <div id="userCounter" class="user-counter" title="Current Users">Users Online: 0</div>
+
+  <!-- Search Modal -->
+  <div id="searchModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="searchTitle" style="display:none;">
+    <div class="card" style="width:min(640px,92vw);">
+      <div class="card-title">
+        <span id="searchTitle">Search</span>
+        <button data-close style="all:unset; cursor:pointer; font-size:18px;">✖</button>
+      </div>
+      <div>
+        <input id="globalSearchInput" type="search" placeholder="Enter search term and press Enter" 
+               style="width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--border); 
+                      background: var(--card-bg); color: var(--fg);" />
+        <div style="font-size:12px; opacity:.85; margin-top:8px;">Shortcut: <kbd>Ctrl</kbd> + <kbd>K</kbd></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Emergency Modal -->
+  <div id="emergencyModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="emergencyTitle" style="display:none;">
+    <div class="card" style="width:min(560px,92vw);">
+      <div class="card-title">
+        <span id="emergencyTitle">Emergency Information</span>
+        <button data-close style="all:unset; cursor:pointer; font-size:18px;">✖</button>
+      </div>
+      <ul style="line-height:1.9; margin:0; padding-left: 18px;">
+        <li>📞 911 – Emergency Services</li>
+        <li>🚒 Fire Department – Local</li>
+        <li>🏥 Nearest Hospital – City Medical Center</li>
+        <li>⚠️ City Alerts: Check 'News' tab</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" style="display:none;">
+    <div class="card" style="width:min(560px,92vw);">
+      <div class="card-title">
+        <span id="settingsTitle">Settings</span>
+        <button data-close style="all:unset; cursor:pointer; font-size:18px;">✖</button>
+      </div>
+      <div style="line-height:2;">
+        <div style="margin-bottom:16px;">
+          <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <input type="checkbox" id="autoRefresh" checked style="width:16px; height:16px;">
+            <span>Auto Refresh (every 30 seconds)</span>
+          </label>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <input type="checkbox" id="notifications" checked style="width:16px; height:16px;">
+            <span>Show Notifications</span>
+          </label>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <input type="checkbox" id="soundEffects" style="width:16px; height:16px;">
+            <span>Sound Effects</span>
+          </label>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block; margin-bottom:8px;">Language</label>
+          <select id="languageSelect" style="width:100%; padding:8px; border-radius:6px; 
+                  border:1px solid var(--border); background: var(--card-bg); color: var(--fg);">
+            <option value="en">English</option>
+            <option value="ko">한국어</option>
+            <option value="zh">中文</option>
+            <option value="ja">日本語</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div id="notification" class="notification" role="status" aria-live="polite">
+    <div style="font-weight:800; margin-bottom:2px;">🔔 Alert</div>
+    <div id="notificationMessage"></div>
+  </div>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo"><span class="logo-icon">🏙️</span><span>Smart City Info</span></div>
+      <div class="time-display">
+        <div class="time" id="clock">14:30:00</div>
+        <div class="date" id="date">Wednesday, September 17, 2025</div>
+      </div>
+      <div class="weather-mini">
+        <span>📍 Seoul</span>
+        <span id="miniWeather">☀️</span>
+        <span class="weather-mini-temp" id="miniTemp">22°C</span>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="navigation">
+      <button class="tab-button active" data-tab="transport">
+        <span class="tab-icon">🚌</span>
+        <span class="tab-label">Transport</span>
+        <span class="tab-badge" id="transportBadge" style="display:none;">0</span>
+      </button>
+      <button class="tab-button" data-tab="weather">
+        <span class="tab-icon">☀️</span>
+        <span class="tab-label">Weather</span>
+      </button>
+      <button class="tab-button" data-tab="news">
+        <span class="tab-icon">📰</span>
+        <span class="tab-label">News</span>
+        <span class="tab-badge" id="newsBadge">0</span>
+      </button>
+      <button class="tab-button" data-tab="culture">
+        <span class="tab-icon">🎨</span>
+        <span class="tab-label">Culture</span>
+      </button>
+    </div>
+
+    <!-- Transport Panel -->
+    <section id="transport" class="content-panel active">
+      <div class="card">
+        <h3 class="card-title">📢 Announcements</h3>
+        <div id="transportNotices" style="line-height:1.7;"></div>
+      </div>
+      <div class="transport-grid">
+        <div>
+          <div class="card">
+            <h2 class="card-title">
+              <span>🚌 Live Bus Tracking System</span>
+              <span style="font-size: 24px; color: var(--muted); margin-left: 10px;">Real-time monitoring</span>
+            </h2>
+            
+            <!-- Bus Route 42 (Red) -->
+            <div class="bus-tracker-container bus-route-red">
+              <div class="bus-header">
+                <div class="bus-header-left">
+                  <div class="bus-badge">
+                    <span>🚌</span>
+                    <span>42</span>
+                  </div>
+                  <div>
+                    <div style="font-weight: bold; font-size: 30px;">Express Route 42</div>
+                    <div style="font-size: 15px; color: var(--muted);">Downtown → Airport Terminal 2</div>
+                  </div>
+                </div>
+                <div class="bus-header-right">
+                  <div class="weather-badge">
+                    <span id="bus1-weather">☀️</span>
+                    <span>22°C</span>
+                  </div>
+                  <div class="traffic-badge" id="bus1-traffic">
+                    <span>🚦</span>
+                    <span id="bus1-traffic-text">Smooth</span>
+                  </div>
+                  <div class="arrival-timer">
+                    <span>⏱️ ETA:</span>
+                    <span id="bus1-eta">2:30</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="bus-content-wrapper">
+                <div style="flex: 1;">
+                  <div class="route-tracker">
+                    <div class="route-line">
+                      <div class="route-progress" id="bus1-progress"></div>
+                    </div>
+                    <div class="stops-container" id="bus1-stops"></div>
+                    <div class="bus" id="bus1">
+                      <div class="bus-container">
+                      
+                        <div class="bus-icon">🚌</div>
+                        <div class="bus-passengers">
+                          <span class="passenger-icon" id="bus1-load-icon"></span>
+                          <span id="bus1-passengers">15/45</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="info-panel">
+                    <div class="info-card">
+                      <div class="info-label">📍 Current Stop</div>
+                      <div class="info-value" id="bus1-current">DOWNTOWN1</div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">⭐ Next Stop</div>
+                      <div class="info-value" id="bus1-next">Central</div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">🚀 Speed</div>
+                      <div class="info-value" id="bus1-speed">38 <small>km/h</small></div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">👥 Passengers</div>
+                      <div class="info-value" id="bus1-pass-count">15</div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">⛽ Fuel</div>
+                      <div class="info-value" id="bus1-fuel">72<small>%</small></div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">📏 Distance</div>
+                      <div class="info-value" id="bus1-distance">0<small>km</small></div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">🌡️ Engine</div>
+                      <div class="info-value" id="bus1-engine">92<small>°C</small></div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">🕐 Status</div>
+                      <div class="info-value" id="bus1-status" style="color: #10b981;">Running</div>
+                    </div>
+                  </div>
+                  
+                  <div class="history-panel">
+                    <div class="history-title">
+                      <span>📜</span>
+                      <span>Stop History</span>
+                    </div>
+                    <div class="history-list" id="bus1-history"></div>
+                  </div>
+                </div>
+                
+                <div class="stats-panel">
+                  <div class="stats-title">
+                    <span>📊</span>
+                    <span>Route Statistics</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">🚏 Stops</span>
+                    <span class="stat-value" id="bus1-stops-count">1/8</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">⏱️ Trip Time</span>
+                    <span class="stat-value" id="bus1-trip-time">0:00</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">👤 Total Carried</span>
+                    <span class="stat-value" id="bus1-total-pass">15</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">💺 Load</span>
+                    <span class="stat-value" id="bus1-load">33%</span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill" id="bus1-load-bar" style="width: 33%"></div>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">⚡ Avg Speed</span>
+                    <span class="stat-value" id="bus1-avg-speed">0 km/h</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">🕐 Delay</span>
+                    <span class="stat-value" id="bus1-delay" style="color: #10b981;">On Time</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">📶 GPS</span>
+                    <span class="stat-value" style="color: #10b981;">Good</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Bus Route 17 (Blue) -->
+            <div class="bus-tracker-container bus-route-blue">
+              <div class="bus-header">
+                <div class="bus-header-left">
+                  <div class="bus-badge">
+                    <span>🚌</span>
+                    <span>17</span>
+                  </div>
+                  <div>
+                    <div style="font-weight: bold; font-size: 30px;">Local Route 17</div>
+                    <div style="font-size: 15px; color: var(--muted);">University → Tech Park</div>
+                  </div>
+                </div>
+                <div class="bus-header-right">
+                  <div class="weather-badge">
+                    <span id="bus2-weather">⛅</span>
+                    <span>20°C</span>
+                  </div>
+                  <div class="traffic-badge medium" id="bus2-traffic">
+                    <span>🚦</span>
+                    <span id="bus2-traffic-text">Normal</span>
+                  </div>
+                  <div class="arrival-timer">
+                    <span>⏱️ ETA:</span>
+                    <span id="bus2-eta">5:15</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="bus-content-wrapper">
+                <div style="flex: 1;">
+                  <div class="route-tracker">
+                    <div class="route-line">
+                      <div class="route-progress" id="bus2-progress"></div>
+                    </div>
+                    <div class="stops-container" id="bus2-stops"></div>
+                    <div class="bus" id="bus2">
+                      <div class="bus-container">
+                       
+                        <div class="bus-icon">🚌</div>
+                        <div class="bus-passengers">
+                          <span class="passenger-icon full" id="bus2-load-icon"></span>
+                          <span id="bus2-passengers">22/40</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="info-panel">
+                    <div class="info-card">
+                      <div class="info-label">📍 Current Stop</div>
+                      <div class="info-value" id="bus2-current">University</div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">⭐ Next Stop</div>
+                      <div class="info-value" id="bus2-next">Library</div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">🚀 Speed</div>
+                      <div class="info-value" id="bus2-speed">42 <small>km/h</small></div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">👥 Passengers</div>
+                      <div class="info-value" id="bus2-pass-count">22</div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">⛽ Fuel</div>
+                      <div class="info-value" id="bus2-fuel">85<small>%</small></div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">📏 Distance</div>
+                      <div class="info-value" id="bus2-distance">0<small>km</small></div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">🌡️ Engine</div>
+                      <div class="info-value" id="bus2-engine">88<small>°C</small></div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">🕐 Status</div>
+                      <div class="info-value" id="bus2-status" style="color: #10b981;">Running</div>
+                    </div>
+                  </div>
+                  
+                  <div class="history-panel">
+                    <div class="history-title">
+                      <span>📜</span>
+                      <span>Stop History</span>
+                    </div>
+                    <div class="history-list" id="bus2-history"></div>
+                  </div>
+                </div>
+                
+                <div class="stats-panel">
+                  <div class="stats-title">
+                    <span>📊</span>
+                    <span>Route Statistics</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">🚏 Stops</span>
+                    <span class="stat-value" id="bus2-stops-count">1/7</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">⏱️ Trip Time</span>
+                    <span class="stat-value" id="bus2-trip-time">0:00</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">👤 Total Carried</span>
+                    <span class="stat-value" id="bus2-total-pass">22</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">💺 Load</span>
+                    <span class="stat-value" id="bus2-load">55%</span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill" id="bus2-load-bar" style="width: 55%"></div>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">⚡ Avg Speed</span>
+                    <span class="stat-value" id="bus2-avg-speed">0 km/h</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">🕐 Delay</span>
+                    <span class="stat-value" id="bus2-delay" style="color: #fbbf24;">+2 min</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">📶 GPS</span>
+                    <span class="stat-value" style="color: #10b981;">Good</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Bus Route 85 (Green) -->
+            <div class="bus-tracker-container bus-route-green">
+              <div class="bus-header">
+                <div class="bus-header-left">
+                  <div class="bus-badge">
+                    <span>🚌</span>
+                    <span>85</span>
+                  </div>
+                  <div>
+                    <div style="font-weight: bold; font-size: 30px;">Suburban Route 85</div>
+                    <div style="font-size: 15px; color: var(--muted);">Station → Riverside Mall</div>
+                  </div>
+                </div>
+                <div class="bus-header-right">
+                  <div class="weather-badge">
+                    <span id="bus3-weather">🌤️</span>
+                    <span>21°C</span>
+                  </div>
+                  <div class="traffic-badge" id="bus3-traffic">
+                    <span>🚦</span>
+                    <span id="bus3-traffic-text">Smooth</span>
+                  </div>
+                  <div class="arrival-timer">
+                    <span>⏱️ ETA:</span>
+                    <span id="bus3-eta">0:45</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="bus-content-wrapper">
+                <div style="flex: 1;">
+                  <div class="route-tracker">
+                    <div class="route-line">
+                      <div class="route-progress" id="bus3-progress"></div>
+                    </div>
+                    <div class="stops-container" id="bus3-stops"></div>
+                    <div class="bus" id="bus3">
+                      <div class="bus-container">
+                     
+                        <div class="bus-icon">🚌</div>
+                        <div class="bus-passengers">
+                          <span class="passenger-icon" id="bus3-load-icon"></span>
+                          <span id="bus3-passengers">8/35</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="info-panel">
+                    <div class="info-card">
+                      <div class="info-label">📍 Current Stop</div>
+                      <div class="info-value" id="bus3-current">Station</div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">⭐ Next Stop</div>
+                      <div class="info-value" id="bus3-next">Park Ave</div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">🚀 Speed</div>
+                      <div class="info-value" id="bus3-speed">35 <small>km/h</small></div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">👥 Passengers</div>
+                      <div class="info-value" id="bus3-pass-count">8</div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">⛽ Fuel</div>
+                      <div class="info-value" id="bus3-fuel">58<small>%</small></div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">📏 Distance</div>
+                      <div class="info-value" id="bus3-distance">0<small>km</small></div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">🌡️ Engine</div>
+                      <div class="info-value" id="bus3-engine">95<small>°C</small></div>
+                    </div>
+                    <div class="info-card">
+                      <div class="info-label">🕐 Status</div>
+                      <div class="info-value" id="bus3-status" style="color: #10b981;">Running</div>
+                    </div>
+                  </div>
+                  
+                  <div class="history-panel">
+                    <div class="history-title">
+                      <span>📜</span>
+                      <span>Stop History</span>
+                    </div>
+                    <div class="history-list" id="bus3-history"></div>
+                  </div>
+                </div>
+                
+                <div class="stats-panel">
+                  <div class="stats-title">
+                    <span>📊</span>
+                    <span>Route Statistics</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">🚏 Stops</span>
+                    <span class="stat-value" id="bus3-stops-count">1/7</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">⏱️ Trip Time</span>
+                    <span class="stat-value" id="bus3-trip-time">0:00</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">👤 Total Carried</span>
+                    <span class="stat-value" id="bus3-total-pass">8</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">💺 Load</span>
+                    <span class="stat-value" id="bus3-load">23%</span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill" id="bus3-load-bar" style="width: 23%"></div>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">⚡ Avg Speed</span>
+                    <span class="stat-value" id="bus3-avg-speed">0 km/h</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">🕐 Delay</span>
+                    <span class="stat-value" id="bus3-delay" style="color: #10b981;">On Time</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">📶 GPS</span>
+                    <span class="stat-value" style="color: #10b981;">Good</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Overall Bus Statistics -->
+            <div class="overall-bus-stats">
+              <div class="overall-title">
+                <span>📊</span>
+                <span>Integrated Bus Management System</span>
+              </div>
+              <div class="stats-grid">
+                <div class="stat-card">
+                  <div class="stat-label">🚌 Active Buses</div>
+                  <div class="stat-value">3 buses</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">👥 Total Passengers</div>
+                  <div class="stat-value" id="total-passengers">45</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">📏 Total Distance</div>
+                  <div class="stat-value" id="total-distance">0 km</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">⛽ Avg Fuel</div>
+                  <div class="stat-value" id="avg-fuel">72%</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">🌡️ Avg Engine Temp</div>
+                  <div class="stat-value" id="avg-temp">92°C</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card">
+            <h2 class="card-title">
+              <span>🚇 Metro Real-Time Tracking</span>
+              <span style="font-size: 11px; color: var(--muted); margin-left: 10px;">Live monitoring</span>
+            </h2>
+            
+            <!-- Metro Line 2 (Green) -->
+            <div class="metro-container metro-line-2">
+              <div class="metro-header">
+                <div class="metro-header-left">
+                  <div class="metro-line-badge">
+                    <div class="metro-line-number">2</div>
+                    <span>Line 2 (Circle)</span>
+                  </div>
+                  <div>
+                    <div style="font-weight: bold; font-size: 12px;">Central → East Loop</div>
+                    <div style="font-size: 10px; color: var(--muted);">Clockwise</div>
+                  </div>
+                </div>
+                <div class="metro-header-right">
+                  <div class="metro-status-badge interval">
+                    <span>⏱️</span>
+                    <span>3 min interval</span>
+                  </div>
+                  <div class="metro-status-badge" id="metro2-crowding">
+                    <span>👥</span>
+                    <span>Normal</span>
+                  </div>
+                  <div class="metro-arrival">
+                    <span>Arriving in:</span>
+                    <span id="metro2-eta">1:20</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="metro-tracker">
+                <div class="metro-line">
+                  <div class="metro-progress" id="metro2-progress"></div>
+                </div>
+                <div class="metro-stations" id="metro2-stations"></div>
+                <div class="metro-train" id="metro2-train">
+                  <div class="metro-train-container">
+                    <div class="metro-train-number">2234</div>
+                    <div class="metro-train-icon"></div>
+                    <div class="metro-train-load">
+                      <span class="metro-load-icon" id="metro2-load-icon"></span>
+                      <span id="metro2-load">Normal</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="metro-info-panel">
+                <div class="metro-info-card">
+                  <div class="metro-info-label">📍 Current</div>
+                  <div class="metro-info-value" id="metro2-current">Central</div>
+                </div>
+                <div class="metro-info-card">
+                  <div class="metro-info-label">⭐ Next</div>
+                  <div class="metro-info-value" id="metro2-next">City Hall</div>
+                </div>
+                <div class="metro-info-card">
+                  <div class="metro-info-label">🚄 Speed</div>
+                  <div class="metro-info-value" id="metro2-speed">45 km/h</div>
+                </div>
+                <div class="metro-info-card">
+                  <div class="metro-info-label">👥 Passengers</div>
+                  <div class="metro-info-value" id="metro2-passengers">742</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Metro Line 3 (Orange) -->
+            <div class="metro-container metro-line-3">
+              <div class="metro-header">
+                <div class="metro-header-left">
+                  <div class="metro-line-badge">
+                    <div class="metro-line-number">3</div>
+                    <span>Line 3</span>
+                  </div>
+                  <div>
+                    <div style="font-weight: bold; font-size: 12px;">North → South</div>
+                    <div style="font-size: 10px; color: var(--muted);">Express</div>
+                  </div>
+                </div>
+                <div class="metro-header-right">
+                  <div class="metro-status-badge interval">
+                    <span>⏱️</span>
+                    <span>4 min interval</span>
+                  </div>
+                  <div class="metro-status-badge high" id="metro3-crowding">
+                    <span>👥</span>
+                    <span>Crowded</span>
+                  </div>
+                  <div class="metro-arrival">
+                    <span>Arriving in:</span>
+                    <span id="metro3-eta">0:45</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="metro-tracker">
+                <div class="metro-line">
+                  <div class="metro-progress" id="metro3-progress"></div>
+                </div>
+                <div class="metro-stations" id="metro3-stations"></div>
+                <div class="metro-train" id="metro3-train">
+                  <div class="metro-train-container">
+                    <div class="metro-train-number">3156</div>
+                    <div class="metro-train-icon"></div>
+                    <div class="metro-train-load">
+                      <span class="metro-load-icon high" id="metro3-load-icon"></span>
+                      <span id="metro3-load">Crowded</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="metro-info-panel">
+                <div class="metro-info-card">
+                  <div class="metro-info-label">📍 Current</div>
+                  <div class="metro-info-value" id="metro3-current">North Station</div>
+                </div>
+                <div class="metro-info-card">
+                  <div class="metro-info-label">⭐ Next</div>
+                  <div class="metro-info-value" id="metro3-next">University</div>
+                </div>
+                <div class="metro-info-card">
+                  <div class="metro-info-label">🚄 Speed</div>
+                  <div class="metro-info-value" id="metro3-speed">52 km/h</div>
+                </div>
+                <div class="metro-info-card">
+                  <div class="metro-info-label">👥 Passengers</div>
+                  <div class="metro-info-value" id="metro3-passengers">1,123</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Metro Line 4 (Blue) -->
+            <div class="metro-container metro-line-4">
+              <div class="metro-header">
+                <div class="metro-header-left">
+                  <div class="metro-line-badge">
+                    <div class="metro-line-number">4</div>
+                    <span>Line 4</span>
+                  </div>
+                  <div>
+                    <div style="font-weight: bold; font-size: 12px;">East → West</div>
+                    <div style="font-size: 10px; color: var(--muted);">Local</div>
+                  </div>
+                </div>
+                <div class="metro-header-right">
+                  <div class="metro-status-badge interval">
+                    <span>⏱️</span>
+                    <span>3 min interval</span>
+                  </div>
+                  <div class="metro-status-badge" id="metro4-crowding">
+                    <span>👥</span>
+                    <span>Light</span>
+                  </div>
+                  <div class="metro-arrival">
+                    <span>Arriving in:</span>
+                    <span id="metro4-eta">2:10</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="metro-tracker">
+                <div class="metro-line">
+                  <div class="metro-progress" id="metro4-progress"></div>
+                </div>
+                <div class="metro-stations" id="metro4-stations"></div>
+                <div class="metro-train" id="metro4-train">
+                  <div class="metro-train-container">
+                    <div class="metro-train-number">4089</div>
+                    <div class="metro-train-icon"></div>
+                    <div class="metro-train-load">
+                      <span class="metro-load-icon" id="metro4-load-icon"></span>
+                      <span id="metro4-load">Light</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="metro-info-panel">
+                <div class="metro-info-card">
+                  <div class="metro-info-label">📍 Current</div>
+                  <div class="metro-info-value" id="metro4-current">East End</div>
+                </div>
+                <div class="metro-info-card">
+                  <div class="metro-info-label">⭐ Next</div>
+                  <div class="metro-info-value" id="metro4-next">Downtown</div>
+                </div>
+                <div class="metro-info-card">
+                  <div class="metro-info-label">🚄 Speed</div>
+                  <div class="metro-info-value" id="metro4-speed">48 km/h</div>
+                </div>
+                <div class="metro-info-card">
+                  <div class="metro-info-label">👥 Passengers</div>
+                  <div class="metro-info-value" id="metro4-passengers">456</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside>
+          <div class="card">
+            <h3 class="card-title">🚦 Live Traffic Status</h3>
+            <div style="line-height:1.9;">
+              <p>📍 Current Location: City Hall Station </p>
+              <p>🟢 Traffic Flow: <span id="trafficStatus">Smooth</span></p>
+              <p>⏱️ Average Wait: <span id="avgWait">5 min</span></p>
+              <p>🚌 Active Buses: <span id="activeBuses">12</span></p>
+              <p>👥 Congestion: <span id="congestion">Normal</span></p>
+            </div>
+          </div>
+          <div class="card">
+            <h3 class="card-title">📊 Transport Statistics</h3>
+            <div class="chart-container">
+              <div class="chart-bar">
+                <span class="chart-label">Bus Usage</span>
+                <div class="chart-progress">
+                  <div class="chart-fill" style="width:75%; background:linear-gradient(90deg,#38bdf8,#0ea5e9,#34d399); 
+                       height:12px; border-radius:999px; text-align:right; padding-right:8px; 
+                       line-height:12px; font-size:12px; color:#fff;">75%</div>
+                </div>
+              </div>
+              <div class="chart-bar" style="margin-top:10px;">
+                <span class="chart-label">Subway Usage</span>
+                <div class="chart-progress">
+                  <div class="chart-fill" style="width:85%; background:linear-gradient(90deg,#38bdf8,#0ea5e9,#34d399); 
+                       height:12px; border-radius:999px; text-align:right; padding-right:8px; 
+                       line-height:12px; font-size:12px; color:#fff;">85%</div>
+                </div>
+              </div>
+              <div class="chart-bar" style="margin-top:10px;">
+                <span class="chart-label">Taxi Usage</span>
+                <div class="chart-progress">
+                  <div class="chart-fill" style="width:45%; background:linear-gradient(90deg,#38bdf8,#0ea5e9,#34d399); 
+                       height:12px; border-radius:999px; text-align:right; padding-right:8px; 
+                       line-height:12px; font-size:12px; color:#fff;">45%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Weather Panel -->
+    <section id="weather" class="content-panel">
+      <div class="card">
+        <div class="weather-main">
+          <div class="weather-icon" id="weatherIcon">☀️</div>
+          <div class="temperature">
+            <span id="currentTemp">22</span>°C 
+            <span class="temp-change">↑2°</span>
+          </div>
+          <div class="weather-desc" id="weatherDesc">Clear</div>
+          <div class="feels-like">Feels like <span id="feelsLike">20°C</span></div>
+          <div class="weather-details">
+            <div class="weather-detail-item">
+              <div class="detail-icon">💧</div>
+              <div class="detail-label">Humidity</div>
+              <div class="detail-value" id="humidity">65%</div>
+            </div>
+            <div class="weather-detail-item">
+              <div class="detail-icon">💨</div>
+              <div class="detail-label">Wind</div>
+              <div class="detail-value" id="windSpeed">12 km/h</div>
+            </div>
+            <div class="weather-detail-item">
+              <div class="detail-icon">☀️</div>
+              <div class="detail-label">UV Index</div>
+              <div class="detail-value" id="uvIndex">Medium</div>
+            </div>
+            <div class="weather-detail-item">
+              <div class="detail-icon">🌫️</div>
+              <div class="detail-label">Air Quality</div>
+              <div class="detail-value" id="airQuality">Good</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 class="card-title">⏰ Hourly Forecast</h3>
+        <div class="hourly-forecast" id="hourlyForecast"></div>
+      </div>
+      <div class="card">
+        <h3 class="card-title">📅 Weekly Forecast</h3>
+        <div id="weeklyForecast" style="line-height:2.0;"></div>
+      </div>
+    </section>
+
+    <!-- News Panel -->
+    <section id="news" class="content-panel">
+      <div class="news-grid">
+        <div>
+          <div class="card">
+            <h2 class="card-title">📰 Top Stories</h2>
+            <div id="newsItems"></div>
+          </div>
+        </div>
+        <aside>
+          <div class="card">
+            <h3 class="card-title">🔥 Trending Now</h3>
+            <div id="trends" style="line-height:2;"></div>
+          </div>
+          <div class="card">
+            <h3 class="card-title">📅 Today's Events</h3>
+            <div id="todayEvents" style="font-size:14px; line-height:1.8;"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Culture Panel -->
+    <section id="culture" class="content-panel">
+      <div class="card">
+        <h2 class="card-title">🎨 Culture & Living</h2>
+        <div class="culture-grid" id="cultureGrid"></div>
+      </div>
+      <div class="card">
+        <h3 class="card-title">🎭 This Week's Events</h3>
+        <div id="weekEvents" style="line-height:2;"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-item">
+      <span class="status-indicator"></span>
+      <span>Live Connection</span>
+    </div>
+    <div class="status-item">Last Update: <span id="lastUpdate">Just now</span></div>
+    <div class="status-item" id="activeUsers">Active Users: 127</div>
+  </div>
+
+  
+
+  <script src="js/script.js"></script>
+</body>
+</html>
