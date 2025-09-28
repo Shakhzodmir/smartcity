@@ -1,1 +1,1 @@
-"# smartcity" 
+# smartcity
